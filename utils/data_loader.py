@@ -204,3 +204,13 @@ def compute_event_metrics():
         "unique_sessions": events["ga_session_id"].nunique(),
         "unique_users": events["user_pseudo_id"].nunique(),
     }
+
+# def safe_dataframe(df):
+#     """Convert all columns to Arrow-safe types before passing to st.dataframe"""
+#     df = df.copy()
+#     for col in df.columns:
+#         if df[col].dtype == object:
+#             df[col] = df[col].astype(str)
+#         elif str(df[col].dtype).startswith("bool"):
+#             df[col] = df[col].astype(str)
+#     return df

@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils.data_loader import compute_sales_metrics, compute_event_metrics, compute_elasticity_data
 from agents.multi_agent import RetailAISystem
+from utils.data_loader import ..., safe_dataframe
 
 def render():
     st.markdown("## 🧠 AI Agent Insights Dashboard")

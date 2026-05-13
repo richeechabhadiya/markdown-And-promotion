@@ -4,6 +4,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from utils.data_loader import load_bq_events, compute_event_metrics, load_orders, load_order_items, compute_sales_metrics
+from utils.data_loader import ..., safe_dataframe
 
 def render():
     st.markdown("## 👥 Customer Behavior Dashboard")
