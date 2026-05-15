@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from utils.data_loader import load_bq_events, compute_event_metrics, load_orders, load_order_items, compute_sales_metrics
-from utils.data_loader import ..., safe_dataframe
+
 
 def render():
     st.markdown("## 👥 Customer Behavior Dashboard")
@@ -17,7 +17,6 @@ def render():
     metrics           = compute_sales_metrics()
 
     completed_orders  = orders[orders["state"] == "complete"]
-
     cart_rate         = event_metrics["cart_abandonment_rate"]
     total_events      = event_metrics["total_events"]
     unique_sessions   = event_metrics["unique_sessions"]
@@ -75,7 +74,7 @@ def render():
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)"
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         st.caption("Stage-by-stage drop-off:")
         for i in range(1, len(funnel_df)):
@@ -124,12 +123,12 @@ def render():
                 legend=dict(font=dict(color="white")),
                 xaxis=dict(title="Count")
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
             st.caption("🟣 Purple bar much longer than green = high views, low purchases = price too high → markdown candidate")
 
     st.divider()
 
-    # ── Row 2: Daily Trend + Add vs Remove ────────────────────────────────
+    # ── Row 2: Daily Trend + Journey Analysis ─────────────────────────────
     col1, col2 = st.columns(2)
 
     with col1:
@@ -155,22 +154,19 @@ def render():
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
             legend=dict(font=dict(color="white"))
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with col2:
         st.markdown("### 🛍️ Customer Purchase Journey Analysis")
         st.caption("Full event funnel with drop-off at each stage — shows where pricing friction occurs.")
 
-        # Build a complete journey breakdown from all events with item data
         journey_events = ["view_item", "add_to_cart", "remove_from_cart", "begin_checkout", "purchase"]
         journey_counts = []
         for e in journey_events:
             cnt = int(events[events["event_name"] == e]["item_name"].notna().sum())
             journey_counts.append({"Event": e.replace("_", " ").title(), "Count": cnt, "raw": e})
-
         journey_df = pd.DataFrame(journey_counts)
 
-        # Color each stage
         color_map = {
             "view_item":        "#6366f1",
             "add_to_cart":      "#10b981",
@@ -180,17 +176,16 @@ def render():
         }
         journey_df["color"] = journey_df["raw"].map(color_map)
 
-        # Conversion rates between stages
         view_cnt     = journey_df[journey_df["raw"] == "view_item"]["Count"].values[0]
         add_cnt      = journey_df[journey_df["raw"] == "add_to_cart"]["Count"].values[0]
         remove_cnt   = journey_df[journey_df["raw"] == "remove_from_cart"]["Count"].values[0]
         checkout_cnt = journey_df[journey_df["raw"] == "begin_checkout"]["Count"].values[0]
         purchase_cnt = journey_df[journey_df["raw"] == "purchase"]["Count"].values[0]
 
-        cart_to_remove   = round(remove_cnt / (add_cnt + 1) * 100, 1)
-        view_to_add      = round(add_cnt / (view_cnt + 1) * 100, 1)
-        add_to_checkout  = round(checkout_cnt / (add_cnt + 1) * 100, 1)
-        checkout_to_buy  = round(purchase_cnt / (checkout_cnt + 1) * 100, 1)
+        cart_to_remove  = round(remove_cnt   / (add_cnt      + 1) * 100, 1)
+        view_to_add     = round(add_cnt      / (view_cnt     + 1) * 100, 1)
+        add_to_checkout = round(checkout_cnt / (add_cnt      + 1) * 100, 1)
+        checkout_to_buy = round(purchase_cnt / (checkout_cnt + 1) * 100, 1)
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -209,15 +204,14 @@ def render():
             paper_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(title="Event Count")
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
-        # Conversion rate summary cards
         col_a, col_b = st.columns(2)
         with col_a:
             st.markdown(f"""
             <div style="background:rgba(99,102,241,0.15); border:1px solid #6366f1;
                         border-radius:8px; padding:10px; text-align:center;">
-                <div style="color:#94a3b8; font-size:0.75rem;">View → Add to Cart</div>
+                <div style="color:#94a3b8; font-size:0.75rem;">View to Add to Cart</div>
                 <div style="color:#a5b4fc; font-size:1.4rem; font-weight:700;">{view_to_add}%</div>
                 <div style="color:#64748b; font-size:0.7rem;">
                     {'✅ Good' if view_to_add > 20 else '⚠️ Low — price deterring adds'}
@@ -238,7 +232,7 @@ def render():
             st.markdown(f"""
             <div style="background:rgba(245,158,11,0.1); border:1px solid #f59e0b;
                         border-radius:8px; padding:10px; text-align:center;">
-                <div style="color:#94a3b8; font-size:0.75rem;">Add to Cart → Checkout</div>
+                <div style="color:#94a3b8; font-size:0.75rem;">Add to Cart to Checkout</div>
                 <div style="color:#fcd34d; font-size:1.4rem; font-weight:700;">{add_to_checkout}%</div>
                 <div style="color:#64748b; font-size:0.7rem;">
                     {'✅ Good' if add_to_checkout > 30 else '⚠️ Abandoning at cart'}
@@ -248,7 +242,7 @@ def render():
             st.markdown(f"""
             <div style="background:rgba(6,182,212,0.1); border:1px solid #06b6d4;
                         border-radius:8px; padding:10px; text-align:center; margin-top:8px;">
-                <div style="color:#94a3b8; font-size:0.75rem;">Checkout → Purchase</div>
+                <div style="color:#94a3b8; font-size:0.75rem;">Checkout to Purchase</div>
                 <div style="color:#67e8f9; font-size:1.4rem; font-weight:700;">{checkout_to_buy}%</div>
                 <div style="color:#64748b; font-size:0.7rem;">
                     {'✅ Good' if checkout_to_buy > 50 else '⚠️ Dropping at payment'}
@@ -284,7 +278,7 @@ def render():
             paper_bgcolor="rgba(0,0,0,0)",
             legend=dict(font=dict(color="white"))
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         st.caption(
             f"🟢 Registered AOV: ${reg_aov:.2f}  |  "
             f"🟡 Guest AOV: ${guest_aov:.2f}  |  "
@@ -318,7 +312,7 @@ def render():
             height=280, margin=dict(l=0, r=0, t=20, b=0),
             plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)"
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         st.caption(
             f"Most orders cluster around ${median_val:.0f}. "
             f"Markdowns bringing products below ${median_val:.0f} will have highest conversion impact."
@@ -347,7 +341,7 @@ def render():
                 height=320, margin=dict(l=0, r=60, t=20, b=0),
                 plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)"
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
     with col2:
         st.markdown("### 📋 Price Sensitivity Summary for Markdown")
@@ -373,7 +367,7 @@ def render():
                     <span style="color:#94a3b8;">View to Cart Rate</span>
                     <span style="color:{'#10b981' if view_to_cart > 10 else '#ef4444'};
                           font-weight:700; float:right;">
-                        {view_to_cart}% {'✅' if view_to_cart > 10 else '⚠️ Low — price may deter'}
+                        {view_to_cart}% {'✅' if view_to_cart > 10 else '⚠️ Low'}
                     </span>
                 </div>
                 <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">

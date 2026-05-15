@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from utils.data_loader import compute_sales_metrics, compute_event_metrics, compute_elasticity_data
 from agents.multi_agent import RetailAISystem
-from utils.data_loader import ..., safe_dataframe
+
 
 def render():
     st.markdown("## 🧠 AI Agent Insights Dashboard")
@@ -41,7 +41,6 @@ def render():
     selected_name    = st.selectbox("🛍️ Choose a Product", product_names)
     selected_product = filtered[filtered["product_name"] == selected_name].iloc[0]
 
-    # Show selected product info
     pi1, pi2, pi3, pi4, pi5 = st.columns(5)
     pi1.metric("💰 Price",        f"${selected_product['price']:.2f}")
     pi2.metric("📦 Stock",        f"{selected_product['quantity']:.0f} units")
@@ -49,7 +48,6 @@ def render():
     pi4.metric("⚠️ Risk",        selected_product["clearance_risk"])
     pi5.metric("📈 Sell-Through", f"{selected_product['sell_through_rate']:.1f}%")
 
-    # Get elasticity
     elast = elasticity_df[elasticity_df["product_id"] == selected_product["product_id"]]["elasticity"].mean()
     if np.isnan(elast):
         elast = -1.2
@@ -69,15 +67,13 @@ def render():
     strategy     = result["strategy"]
     confidence   = result["confidence"]
 
-    # Validate and explain the recommendation
-    new_price    = selected_product["price"] * (1 - markdown_pct / 100)
-    cost_est     = selected_product["price"] * 0.55
-    orig_margin  = ((selected_product["price"] - cost_est) / selected_product["price"] * 100)
-    new_margin   = ((new_price - cost_est) / new_price * 100) if new_price > 0 else 0
+    new_price   = selected_product["price"] * (1 - markdown_pct / 100)
+    cost_est    = selected_product["price"] * 0.55
+    orig_margin = ((selected_product["price"] - cost_est) / selected_product["price"] * 100)
+    new_margin  = ((new_price - cost_est) / new_price * 100) if new_price > 0 else 0
 
     st.markdown("### 🧠 Coordinator Agent — Final Recommendation")
 
-    # Risk color
     risk_bg = {
         "🔴 Critical": "rgba(239,68,68,0.15)",
         "🟠 High":     "rgba(249,115,22,0.15)",
@@ -152,18 +148,14 @@ def render():
                 <span style="color:#c7d2fe; font-size:0.85rem;">🔒 Confidence: </span>
                 <span style="color:white; font-weight:600;">{confidence:.0f}%</span>
                 &nbsp;
-                <span style="color:#64748b; font-size:0.8rem;">
-                    (avg across all 5 agents)
-                </span>
+                <span style="color:#64748b; font-size:0.8rem;">(avg across all 5 agents)</span>
             </div>
         </div>
         <div style="margin-top:12px; padding:12px; background:rgba(255,255,255,0.03);
                     border-radius:8px; border-left: 3px solid #6366f1;">
             <span style="color:#94a3b8; font-size:0.8rem;">
                 📌 New Price after markdown:
-                <span style="color:#a5b4fc; font-weight:700;">
-                    ${new_price:.2f}
-                </span>
+                <span style="color:#a5b4fc; font-weight:700;">${new_price:.2f}</span>
                 &nbsp;(from ${selected_product['price']:.2f})
                 &nbsp;|&nbsp; Est. margin after discount:
                 <span style="color:{'#10b981' if new_margin > 20 else '#ef4444'}; font-weight:700;">
@@ -196,11 +188,11 @@ def render():
         cols = st.columns(2)
         for j, col in enumerate(cols):
             if i + j < len(agent_list):
-                agent = agent_list[i + j]
-                conf  = agent.confidence
-                conf_color  = "#10b981" if conf > 0.8 else "#f59e0b" if conf > 0.65 else "#ef4444"
-                conf_label  = "High" if conf > 0.8 else "Medium" if conf > 0.65 else "Low"
-                icon  = agent_icons.get(agent.agent_name, "🤖")
+                agent      = agent_list[i + j]
+                conf       = agent.confidence
+                conf_color = "#10b981" if conf > 0.8 else "#f59e0b" if conf > 0.65 else "#ef4444"
+                conf_label = "High" if conf > 0.8 else "Medium" if conf > 0.65 else "Low"
+                icon       = agent_icons.get(agent.agent_name, "🤖")
 
                 with col:
                     st.markdown(f"""
@@ -233,7 +225,6 @@ def render():
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # Show key data points cleanly
                     if agent.data:
                         with st.expander(f"📊 {agent.agent_name} — Raw Data", expanded=False):
                             st.json(agent.data)
@@ -298,8 +289,7 @@ def render():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Confidence summary
-    avg_conf = np.mean(confidence_values)
+    avg_conf  = np.mean(confidence_values)
     min_agent = agent_names[confidence_values.index(min(confidence_values))]
     max_agent = agent_names[confidence_values.index(max(confidence_values))]
     st.caption(
@@ -314,7 +304,6 @@ def render():
     st.markdown("### ✅ Human-in-the-Loop Approval")
     st.caption("Review the AI recommendation and take action. You can approve, override with your own value, or reject and escalate.")
 
-    # Show summary before action
     st.markdown(f"""
     <div style="background:rgba(99,102,241,0.08); border:1px solid #4f46e5;
                 border-radius:10px; padding:14px; margin-bottom:16px;">
